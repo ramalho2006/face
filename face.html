@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        h1 {
+            font-size: 30px;
+            color: blue;
+        }
+        .pesquisar img {
+            height: 50px;
+            width: 50px;
+            border-radius: 60px;
+        }
+        input {
+            border-radius: 15px;
+            background-color: rgb(226, 217, 217);
+            color: black;
+            width: 850px;
+            height: 40px;
+            margin-left: 6px;
+            align-items: center;
+            cursor: pointer;
+        }
+        input:hover {
+            background-color: ghostwhite;
+            cursor: pointer;
+        }
+        .pesquisar {
+            display: flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+        .paragrafo {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+        .icone {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin: 20px;
+        }
+        .icone2 {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        button {
+            border-radius: 30px;
+            height: 38px;
+            width: 900px;
+            background-color: blue;
+            color: white;
+            cursor: pointer;
+        }
+        .delete-button {
+            border-radius: 20px;
+            height: 30px;
+            width: 150px;
+            background-color: rgb(0, 162, 255);
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #4c4c4e;
+            cursor: pointer;
+        }
+        main {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .reações {
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            margin: 10px;
+        }
+        .reaction {
+            font-size: 24px;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .reaction:hover {
+            transform: scale(1.2);
+        }
+        .post {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid rgb(77, 77, 79);
+            position: relative;
+            max-width: 350px;
+            margin-left: 28%;
+            border-radius: 5px;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+        .post img {
+            max-width: 100%;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Facebook</h1>
+
+        <div class="pesquisar">
+            <img src="asta.jpeg" alt="Foto de perfil do usuário">
+            <input id="postContent" placeholder="No que você está pensando?" />
+        </div>
+        <hr>
+
+        <div class="paragrafo">
+            <div class="icone">
+                <img src="transmissao-ao-vivo.png" alt="Ícone de Vídeo ao Vivo" class="icone2">
+                <p>Video ao vivo</p>
+            </div>
+
+            <div class="icone">
+                <img src="foto.png" alt="Ícone de Foto/Vídeo" onclick="document.getElementById('postImage').click();" class="icone2">
+                <p>Foto/Vídeo</p>
+                <input type="file" id="postImage" accept="image/*" style="display: none;" onchange="updateImagePreview()">
+            </div>
+
+            <div id="ImagePreview" class="imagem-preview"></div>
+
+            <div class="icone">
+                <img src="feliz.png" alt="Ícone de Sentimento/Atividade" class="icone2">
+                <p>Sentimento/Atividade</p>
+            </div>
+        </div>
+        <button onclick="post()">Publicar</button>
+
+        <div id="feed"></div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.32.6/dist/umd/supabase.min.js"></script>
+    <script>
+        // Configuração do Supabase
+        const supabase = supabase.createClient('https://hodosqjgcrcekumlhbrw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvZG9zcWpnY3JjZWt1bWxoYnJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5OTEzMTIsImV4cCI6MjA1ODU2NzMxMn0.lAI2BxkZmjGGNyrFe_ooYYxKQTmRsWLh3uLTeMqTG1I');
+
+        let selectedImage = null;
+
+        // Função para atualizar a visualização da imagem selecionada
+        function updateImagePreview() {
+            const image = document.getElementById('postImage').files[0];
+            if (image) {
+                selectedImage = URL.createObjectURL(image);
+            }
+        }
+
+        // Função para enviar imagem para o Supabase Storage
+        async function uploadImage(file) {
+            const { data, error } = await supabase
+                .storage
+                .from('face') // Substitua pelo nome do seu bucket
+                .upload(`posts/${file.face}`, file); // Caminho no bucket
+
+            if (error) {
+                console.error('Erro ao fazer upload da imagem:', error);
+                return null;
+            }
+            console.log (data)
+            
+            // Retorne a URL pública do arquivo
+            const url = supabase
+                .storage
+                .from('face')
+                .getPublicUrl(`posts/${file.face}`).publicURL;
+
+            return url;
+        }
+
+        // Função para criar o post
+        async function post() {
+            const content = document.getElementById('postContent').value; 
+            const feed = document.getElementById('feed');
+
+            if (!content && !selectedImage) {
+                alert('Por favor, insira uma mensagem ou selecione uma imagem');
+                return;
+            }
+
+            let imagemUrl = null;
+
+            // Se houver uma imagem selecionada, faça o upload dela para o Supabase
+            if (selectedImage) {
+                const file = document.getElementById('postImage').files[0];
+                imagemUrl = await uploadImage(file);
+            }
+
+            // Salve o post no banco de dados
+            const { data, error } = await supabase
+                .from('posts')
+                .insert([
+                    { texto: content, imagem_url: imagemUrl }
+                ]);
+
+            if (error) {
+                console.error('Erro ao criar o post:', error);
+                return;
+            }
+
+            // Criar o elemento de post
+            const postElement = document.createElement('div');
+            postElement.className = 'post';
+
+            if (content) {
+                const textElement = document.createElement('p');
+                textElement.innerText = content;
+                postElement.appendChild(textElement);
+            }
+
+            if (imagemUrl) {
+                const img = document.createElement('img'); 
+                img.src = imagemUrl;
+                img.style.maxWidth = '100%'; 
+                postElement.appendChild(img);
+            }
+
+            // Criar botão de excluir
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button'; 
+            deleteButton.innerText = 'Excluir';
+            deleteButton.onclick = function() {
+                feed.removeChild(postElement);
+            };
+
+            postElement.appendChild(deleteButton);
+            feed.prepend(postElement);
+
+            // Limpar os campos de entrada
+            document.getElementById('postContent').value = ''; 
+            document.getElementById('postImage').value = ''; 
+            selectedImage = null;
+
+            // Reações do post
+            const reações = document.createElement('div');
+            reações.className = 'reações';
+            reações.innerHTML= `
+                <span class="reaction like" data-reaction="Curtir">&#128077;</span>
+                <span class="reaction love" data-reaction="Amei">&#128420;</span>
+                <span class="reaction haha" data-reaction="Haha">&#128513;</span>
+                <span class="reaction wow" data-reaction="Uau">&#128558;</span>
+                <span class="reaction sad" data-reaction="Triste">&#128546;</span>
+                <span class="reaction angry" data-reaction="Grr">&#128548;</span>
+            `;
+
+            postElement.appendChild(reações);
+
+            const selectedReaction = document.createElement('div');
+            selectedReaction.className = 'selected-reaction';
+            selectedReaction.innerText = 'Selecione uma reação!';
+            postElement.appendChild(selectedReaction);
+
+            // Adicionar evento para selecionar uma reação
+            const reactions = reações.querySelectorAll('.reaction');
+            reactions.forEach(reaction => {
+                reaction.addEventListener('click', function() {
+                    reactions.forEach(r => r.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const reactionName = this.getAttribute('data-reaction');
+                    selectedReaction.innerText = `Você reagiu com: ${reactionName}`;
+                });
+            });
+        }
+
+        // Função para buscar posts do banco de dados
+        async function fetchPosts() {
+            const { data, error } = await supabase
+                .from('posts')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Erro ao buscar posts:', error);
+                return;
+            }
+
+            data.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+
+                const textElement = document.createElement('p');
+                textElement.innerText = post.texto;
+                postElement.appendChild(textElement);
+
+                if (post.imagem_url) {
+                    const img = document.createElement('img');
+                    img.src = post.imagem_url;
+                    img.style.maxWidth = '100%';
+                    postElement.appendChild(img);
+                }
+
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-button'; 
+                deleteButton.innerText = 'Excluir';
+                postElement.appendChild(deleteButton);
+
+                document.getElementById('feed').appendChild(postElement);
+            });
+        }
+
+        // Carregar os posts ao inicializar a página
+        fetchPosts();
+    </script>
+</body>
+</html>
